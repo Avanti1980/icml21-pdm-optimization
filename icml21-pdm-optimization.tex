@@ -1,0 +1,101 @@
+\documentclass{ctexart}
+\usepackage{avanti}
+
+\begin{document}
+\title{PDM的优化}
+\author{Teng Zhang}
+\date{\today}
+\maketitle
+
+目前的优化问题为
+\begin{align*}
+    \min_{\wv} ~ \frac{1}{2m} \sum_{i \in [m]} \max \left\{ 0, 1 - \frac{y_i \wv^\top \xv_i}{\bar{\gamma}} \right\}^2, \quad \st ~ \bar{\gamma} > 0, ~ \| \wv \|_2 = 1
+\end{align*}
+这个形式是有问题的，两个约束都是多余的。注意间隔均值$\bar{\gamma} = \wv^\top \overline{y \xv}$关于$\wv$也是线性的，所以那个比值项是齐次的，放缩$\wv$不影响目标函数值。若求得的$\wv$使得$\bar{\gamma} < 0$，则$-\wv$可使得$\bar{\gamma} > 0$且不改变目标函数值、不破坏第二个约束。同理第二个约束也是多余的，若求得的$\wv$范数不为$1$，可以将其缩放使范数为$1$且不改变目标函数值。
+
+\section{重新优化}
+
+将两个约束都去掉，问题变成
+\begin{align*}
+    \min_{\wv} ~ \frac{1}{2m} \sum_{i \in [m]} \max \left\{ 0, 1 - \frac{y_i \wv^\top \xv_i}{\bar{\gamma}} \right\}^2
+\end{align*}
+由于放缩$\wv$不影响目标函数值，不妨放缩使$\bar{\gamma} = 1$，于是问题可进一步写成
+\begin{align*}
+    \min_{\wv} ~ \frac{1}{2m} \sum_{i \in [m]} \max \left\{ 0, 1 - y_i \wv^\top \xv_i \right\}^2, \quad \st ~ \sum_{i \in [m]} y_i \wv^\top \xv_i = m
+\end{align*}
+这个形式直接看也是合理的，最优情况是所有样本间隔均为$1$，这样损失为零；若有样本间隔$> 1$，由于间隔的和为$m$，必然存在另一个样本间隔$< 1$，这样就会产生损失。
+
+记$\epsilon_i = \max \{ 0, 1 - y_i \wv^\top \xv_i \}$，则问题可写成
+\begin{align*}
+    \min_{\wv, \epsilon_i} ~ \frac{1}{2m} \sum_{i \in [m]} \epsilon_i^2, \quad \st ~ \epsilon_i \ge 0, ~ \epsilon_i \ge 1 - y_i \wv^\top \xv_i, ~ \sum_{i \in [m]} y_i \wv^\top \xv_i = m
+\end{align*}
+其中约束$\epsilon_i \ge 0$是多余的，因为若求得的$\epsilon_i < 0$，令其为零不破坏约束$\epsilon_i \ge 1 - y_i \wv^\top \xv_i$且可以使目标函数值变小，因此不存在这种情况。最终的问题为
+\begin{align} \label{eq: primal}
+    \min_{\wv, \epsilon_i} ~ \frac{1}{2m} \sum_{i \in [m]} \epsilon_i^2, \quad \st ~ \epsilon_i \ge 1 - y_i \wv^\top \xv_i, ~ \sum_{i \in [m]} y_i \wv^\top \xv_i = m
+\end{align}
+目标函数是二次的，约束都是线性的，因此这是一个凸二次规划，直接调用成熟的QP求解器即可。
+
+记$\Xv = [\xv_1, \xv_2, \ldots, \xv_m] \in \Rbb^{d \times m}$，$\Yv = \diag \{ y_1, y_2, \ldots, y_m\}$，$\epsilonv = [\epsilon_1; \epsilon_2; \ldots; \epsilon_m]$，式(\ref{eq: primal})的矩阵形式为
+\begin{align*}
+    \min_{\wv, \epsilonv} ~ \frac{1}{2m} \epsilonv^\top \epsilonv, \quad \st ~ \epsilonv \ge \ev - \Yv \Xv^\top \wv, ~ \ev^\top \Yv \Xv^\top \wv = m
+\end{align*}
+记$\uv = [\wv; \epsilonv] \in \Rbb^{d+m}$，写成QP的标准形式是
+\begin{align*}
+    \min_{\uv} ~ \frac{1}{2} \uv^\top \begin{bmatrix}
+        \zerov \\ & \frac{\Iv}{m}
+    \end{bmatrix} \uv, \quad \st ~ [- \Yv \Xv^\top, -\Iv] \uv \le -\ev, ~ [\Xv \Yv \ev; \zerov]^\top \uv = m
+\end{align*}
+这样就可以直接掉包了。
+
+对偶函数为
+\begin{align*}
+    L = \frac{1}{2m} \epsilonv^\top \epsilonv - \betav^\top (\epsilonv - \ev + \Yv \Xv^\top \wv) - \mu (\ev^\top \Yv \Xv^\top \wv - m)
+\end{align*}
+令$L$关于$\wv$的偏导数为零
+\begin{align*}
+    \frac{\partial L}{\partial \wv} = - \Xv \Yv \betav - \mu \Xv \Yv \ev = \zerov \Longrightarrow \Xv \Yv \betav + \mu \Xv \Yv \ev = \zerov
+\end{align*}
+令$L$关于$\epsilonv$的偏导数为零
+\begin{align*}
+    \frac{\partial L}{\partial \epsilonv} = \frac{\epsilonv}{m} - \betav = \zerov \Longrightarrow \epsilonv = m \betav
+\end{align*}
+故对偶问题为
+\begin{align*}
+    \max_{\betav, \mu} ~ - \frac{m}{2} \betav^\top \betav + \betav^\top \ev + \mu m, \quad \st ~ \Xv \Yv \betav + \mu \Xv \Yv \ev = \zerov, ~ \betav \ge \zerov
+\end{align*}
+记$\alphav = [\betav; \mu] \in \Rbb^{m+1}$，写成QP的标准形式是
+\begin{align*}
+    \min_{\alphav} ~ \frac{1}{2} \alphav^\top \begin{bmatrix}
+        m \Iv \\ & 0
+    \end{bmatrix} \alphav - [\ev; m]^\top \alphav, \quad \st ~ [\Xv \Yv, \Xv \Yv \ev] \alphav = \zerov, ~ \begin{bmatrix}
+        - \Iv \\ & 0
+    \end{bmatrix} \alphav \le \zerov
+\end{align*}
+
+原问题的变量个数为$d + m$，有$m$个线性不等式和$1$个线性等式约束；对偶问题的变量个数为$m+1$，有$d$个线性等式约束，不等式约束很简单可忽略，因此直接调包求解的话，可能对偶问题效率会稍微高点，但不绝对，跟$m$和$d$的值有关系。此外，由于两个问题都有大量形式复杂的约束，所以目前看不存在像SVM、ODM那样高效的基于坐标下降的解法。
+
+\section{核化}
+
+传统核方法都有$\wv$的二次项，再结合损失函数$y \wv^\top \xv \ge 1 - \epsilon$这样的一次项，对偶函数一求导就能得到最优的$\wv$是由$\xv_1, \ldots, \xv_m$线性表出的，即所谓的表示定理，这样回代到二次项中就出现了$\xv_i^\top \xv_j$的内积形式，之后就可以引入核函数了。
+
+PDM目前的形式是无法直接核化的，因为目标函数中没有$\wv$的二次项，而间隔损失函数和$\wv$的二次项似乎不兼容(开头已述)。我目前想到是利用$\Kv \alphav = \zerov \Longleftrightarrow \Kv^\top\Kv \alphav = \zerov$这个结论，于是对偶问题中的等式约束可以改写为
+\begin{align*}
+    [\Xv \Yv, \Xv \Yv \ev]^\top [\Xv \Yv, \Xv \Yv \ev] \alphav = \zerov
+\end{align*}
+这样就有了$\Xv^\top \Xv$这样的形式，且$\Xv$只以$\Xv^\top \Xv$的形式出现，因此可以引入核函数。求得$\betav$和$\mu$后，根据$\epsilonv = m \betav$可以得到$\epsilonv$，利用互补松弛条件
+\begin{align*}
+    \beta_i (\epsilon_i - 1 + y_i \wv^\top \phi(\xv_i)) = 0
+\end{align*}
+对于大于零的$\beta_i$，可以求得$\wv^\top \phi(\xv_i) = y_i - y_i \epsilon_i = y_i - y_i m \beta_i$，这些都是有损失的样本，即“支持向量”。设所有的支持向量为$\xv_1, \xv_2, \ldots, \xv_t$，假如表示定理成立，设
+\begin{align} \label{eq: span}
+    \wv = a_1 \phi(\xv_1) + a_2 \phi(\xv_2) + \cdots + a_t \phi(\xv_t)
+\end{align}
+两边依次左乘$\phi(\xv_1)^\top, \ldots, \phi(\xv_t)^\top$可以得到$t$个方程，求解线性方程组可以得到$a_1, \ldots, a_t$，最后预测
+\begin{align*}
+    \wv^\top \phi(\zv) = (a_1 \phi(\xv_1) + a_2 \phi(\xv_2) + \cdots + a_t \phi(\xv_t))^\top \phi(\zv)
+\end{align*}
+
+所以最终问题就是表示定理是否成立，表示定理要求目标函数中的正则项$\Omega(\| \wv \|)$，其中$\Omega(\cdot)$是单调增函数，PDM没有正则项，可以理解为这里的$\Omega(\cdot)$恒为零函数，但零函数也是单调增函数，所以表示定理成立？
+
+\end{document}
+
