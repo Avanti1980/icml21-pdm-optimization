@@ -1,4 +1,4 @@
-This is XeTeX, Version 3.14159265-2.6-0.999992 (TeX Live 2020/Arch Linux) (preloaded format=xelatex 2021.1.4)  5 JAN 2021 22:40
+This is XeTeX, Version 3.14159265-2.6-0.999992 (TeX Live 2020/Arch Linux) (preloaded format=xelatex 2021.1.5)  6 JAN 2021 02:17
 entering extended mode
  \write18 enabled.
  file:line:error style messages enabled.
@@ -789,8 +789,7 @@ Package: enumitem 2019/06/20 v3.9 Customized lists
 \symCJKmath=\mathgroup255
 LaTeX Font Info:    Overwriting symbol font `CJKmath' in version `bold'
 (Font)                  TU/FZLongZhao-R-GB(0)/m/n --> TU/FZLongZhao-R-GB(0)/b/n on input line 4.
-
-No file icml21-pdm-optimization.aux.
+ (./icml21-pdm-optimization.aux)
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 4.
 LaTeX Font Info:    ... okay on input line 4.
 LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 4.
@@ -811,7 +810,7 @@ LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 4.
 LaTeX Font Info:    ... okay on input line 4.
 LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 4.
 LaTeX Font Info:    ... okay on input line 4.
-ABD: EverySelectfont initializing macros
+ ABD: EverySelectfont initializing macros
 LaTeX Info: Redefining \selectfont on input line 4.
 
 Package fontspec Info: Adjusting the maths setup (use [no-math] to avoid
@@ -888,46 +887,44 @@ Package: gettitlestring 2019/12/15 v1.6 Cleanup title references (HO)
 LaTeX Info: Redefining \ref on input line 4.
 LaTeX Info: Redefining \pageref on input line 4.
 LaTeX Info: Redefining \nameref on input line 4.
+ (./icml21-pdm-optimization.out) (./icml21-pdm-optimization.out)
 \@outlinefile=\write4
-
-
-Package hyperref Warning: Rerun to get /PageLabels entry.
-
 LaTeX Font Info:    Trying to load font information for U+msa on input line 9.
-(/usr/share/texmf-dist/tex/latex/amsfonts/umsa.fd
+ (/usr/share/texmf-dist/tex/latex/amsfonts/umsa.fd
 File: umsa.fd 2013/01/14 v3.01 AMS symbols A
 )
 LaTeX Font Info:    Trying to load font information for U+msb on input line 9.
  (/usr/share/texmf-dist/tex/latex/amsfonts/umsb.fd
 File: umsb.fd 2013/01/14 v3.01 AMS symbols B
-)
+) [1
 
-LaTeX Warning: Reference `eq: primal' on page 1 undefined on input line 38.
+]
 
-[1
-
-] [2] [3] (./icml21-pdm-optimization.aux)
-
-Package rerunfilecheck Warning: File `icml21-pdm-optimization.out' has changed.
-(rerunfilecheck)                Rerun to get outlines right
-(rerunfilecheck)                or use package `bookmark'.
-
-Package rerunfilecheck Info: Checksums for `icml21-pdm-optimization.out':
-(rerunfilecheck)             Before: <no file>
-(rerunfilecheck)             After:  593DE6FF2E88D32EF499BE3ECDA7FD17;158.
-
-LaTeX Warning: There were undefined references.
+Package fontspec Warning: Font "FandolFang-Regular" does not contain requested
+(fontspec)                Script "CJK".
 
 
-LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
+Package fontspec Info: Font family 'FandolFang-Regular(0)' created for font
+(fontspec)             'FandolFang-Regular' with options
+(fontspec)             [Script={CJK},Extension={.otf}].
+(fontspec)              
+(fontspec)              This font family consists of the following NFSS
+(fontspec)             series/shapes:
+(fontspec)              
+(fontspec)             - 'normal' (m/n) with NFSS spec.:
+(fontspec)             <->"[FandolFang-Regular.otf]/OT:language=dflt;"
+(fontspec)             - 'small caps'  (m/sc) with NFSS spec.: 
 
+[2] [3] (./icml21-pdm-optimization.aux)
+Package rerunfilecheck Info: File `icml21-pdm-optimization.out' has not changed.
+(rerunfilecheck)             Checksum: DFF3A61275D99772B85A36853BB7CAAE;229.
  ) 
 Here is how much of TeX's memory you used:
- 40321 strings out of 477299
- 995020 string characters out of 5838339
- 1421516 words of memory out of 5000000
- 59246 multiletter control sequences out of 15000+600000
- 417115 words of font info for 116 fonts, out of 8000000 for 9000
+ 40284 strings out of 477299
+ 992361 string characters out of 5838339
+ 1423048 words of memory out of 5000000
+ 59197 multiletter control sequences out of 15000+600000
+ 417147 words of font info for 120 fonts, out of 8000000 for 9000
  1348 hyphenation exceptions out of 8191
  97i,19n,100p,790b,479s stack positions out of 5000i,500n,10000p,200000b,80000s
 

@@ -23,7 +23,7 @@
 \begin{align*}
     \min_{\wv} ~ \frac{1}{2m} \sum_{i \in [m]} \max \left\{ 0, 1 - y_i \wv^\top \xv_i \right\}^2, \quad \st ~ \sum_{i \in [m]} y_i \wv^\top \xv_i = m
 \end{align*}
-这个形式直接看也是合理的，最优情况是所有样本间隔均为$1$，这样损失为零；若有样本间隔$> 1$，由于间隔的和为$m$，必然存在另一个样本间隔$< 1$，这样就会产生损失。
+这个形式直觉上也是合理的，最优情况是所有样本间隔均为$1$，都等于间隔均值，这样损失为零；若有样本间隔$> 1$，由于间隔的和为$m$，必然存在另一个样本间隔$< 1$，这样就会产生损失。
 
 记$\epsilon_i = \max \{ 0, 1 - y_i \wv^\top \xv_i \}$，则问题可写成
 \begin{align*}
@@ -33,7 +33,7 @@
 \begin{align} \label{eq: primal}
     \min_{\wv, \epsilon_i} ~ \frac{1}{2m} \sum_{i \in [m]} \epsilon_i^2, \quad \st ~ \epsilon_i \ge 1 - y_i \wv^\top \xv_i, ~ \sum_{i \in [m]} y_i \wv^\top \xv_i = m
 \end{align}
-目标函数是二次的，约束都是线性的，因此这是一个凸二次规划，直接调用成熟的QP求解器即可。
+目标函数是二次的，约束都是线性的，因此这是一个凸二次规划，直接调用成熟的QP优化包即可。
 
 记$\Xv = [\xv_1, \xv_2, \ldots, \xv_m] \in \Rbb^{d \times m}$，$\Yv = \diag \{ y_1, y_2, \ldots, y_m\}$，$\epsilonv = [\epsilon_1; \epsilon_2; \ldots; \epsilon_m]$，式(\ref{eq: primal})的矩阵形式为
 \begin{align*}
@@ -45,57 +45,76 @@
         \zerov \\ & \frac{\Iv}{m}
     \end{bmatrix} \uv, \quad \st ~ [- \Yv \Xv^\top, -\Iv] \uv \le -\ev, ~ [\Xv \Yv \ev; \zerov]^\top \uv = m
 \end{align*}
-这样就可以直接掉包了。
+这样就可以直接调包了。
 
-对偶函数为
-\begin{align*}
-    L = \frac{1}{2m} \epsilonv^\top \epsilonv - \betav^\top (\epsilonv - \ev + \Yv \Xv^\top \wv) - \mu (\ev^\top \Yv \Xv^\top \wv - m)
-\end{align*}
-令$L$关于$\wv$的偏导数为零
-\begin{align*}
-    \frac{\partial L}{\partial \wv} = - \Xv \Yv \betav - \mu \Xv \Yv \ev = \zerov \Longrightarrow \Xv \Yv \betav + \mu \Xv \Yv \ev = \zerov
-\end{align*}
-令$L$关于$\epsilonv$的偏导数为零
-\begin{align*}
-    \frac{\partial L}{\partial \epsilonv} = \frac{\epsilonv}{m} - \betav = \zerov \Longrightarrow \epsilonv = m \betav
-\end{align*}
-故对偶问题为
-\begin{align*}
-    \max_{\betav, \mu} ~ - \frac{m}{2} \betav^\top \betav + \betav^\top \ev + \mu m, \quad \st ~ \Xv \Yv \betav + \mu \Xv \Yv \ev = \zerov, ~ \betav \ge \zerov
-\end{align*}
-记$\alphav = [\betav; \mu] \in \Rbb^{m+1}$，写成QP的标准形式是
-\begin{align*}
-    \min_{\alphav} ~ \frac{1}{2} \alphav^\top \begin{bmatrix}
-        m \Iv \\ & 0
-    \end{bmatrix} \alphav - [\ev; m]^\top \alphav, \quad \st ~ [\Xv \Yv, \Xv \Yv \ev] \alphav = \zerov, ~ \begin{bmatrix}
-        - \Iv \\ & 0
-    \end{bmatrix} \alphav \le \zerov
-\end{align*}
-
-原问题的变量个数为$d + m$，有$m$个线性不等式和$1$个线性等式约束；对偶问题的变量个数为$m+1$，有$d$个线性等式约束，不等式约束很简单可忽略，因此直接调包求解的话，可能对偶问题效率会稍微高点，但不绝对，跟$m$和$d$的值有关系。此外，由于两个问题都有大量形式复杂的约束，所以目前看不存在像SVM、ODM那样高效的基于坐标下降的解法。
+%对偶函数为
+%\begin{align*}
+%    L(\epsilonv, \wv, \betav, \mu) = \frac{1}{2m} \epsilonv^\top \epsilonv - \betav^\top %(\epsilonv - \ev + \Yv \Xv^\top \wv) - \mu (\ev^\top \Yv \Xv^\top \wv - m)
+%\end{align*}
+%令$L$关于$\wv$的偏导数为零
+%\begin{align*}
+%    \frac{\partial L}{\partial \wv} = - \Xv \Yv \betav - \mu \Xv \Yv \ev = \zerov %\Longrightarrow \Xv \Yv \betav + \mu \Xv \Yv \ev = \zerov
+%\end{align*}
+%令$L$关于$\epsilonv$的偏导数为零
+%\begin{align*}
+%    \frac{\partial L}{\partial \epsilonv} = \frac{\epsilonv}{m} - \betav = \zerov %\Longrightarrow \epsilonv = m \betav
+%\end{align*}
+%故对偶问题为
+%\begin{align*}
+%    \max_{\betav, \mu} ~ - \frac{m}{2} \betav^\top \betav + \betav^\top \ev + \mu m, %\quad \st ~ \Xv \Yv \betav + \mu \Xv \Yv \ev = \zerov, ~ \betav \ge \zerov
+%\end{align*}
+%记$\alphav = [\betav; \mu] \in \Rbb^{m+1}$，写成QP的标准形式是
+%\begin{align*}
+%    \min_{\alphav} ~ \frac{1}{2} \alphav^\top \begin{bmatrix}
+%        m \Iv \\ & 0
+%    \end{bmatrix} \alphav - [\ev; m]^\top \alphav, \quad \st ~ [\Xv \Yv, \Xv \Yv \ev] %\alphav = \zerov, ~ \begin{bmatrix}
+%        - \Iv \\ & 0
+%    \end{bmatrix} \alphav \le \zerov
+%\end{align*}
+%
+%原问题的变量个数为$d + m$，有$m$个线性不等式和$1$个线性等式约束；对偶问题的变量个数为$m+1$，有$d$个线性等式约束，不等式约束很简单可忽略，因此直接调包求解的话，可能对偶问题效率会稍微高点，但不绝对，跟$m$和$d$的值有关系。此外，由于两个问题都有大量形式复杂的约束，所以目前看不存在基于坐标下降的高效解法。
 
 \section{核化}
 
-传统核方法都有$\wv$的二次项，再结合损失函数$y \wv^\top \xv \ge 1 - \epsilon$这样的一次项，对偶函数一求导就能得到最优的$\wv$是由$\xv_1, \ldots, \xv_m$线性表出的，即所谓的表示定理，这样回代到二次项中就出现了$\xv_i^\top \xv_j$的内积形式，之后就可以引入核函数了。
+设$\kappa (\xv, \zv) = \phi(\xv)^\top \phi(\zv)$，记$\Xv = [\phi(\xv_1), \phi(\xv_2), \ldots, \phi(\xv_m)]$，$\wv$的正交分解为
+\begin{align*}
+    \wv = \underbrace{a_1 \phi(\xv_1) + a_2 \phi(\xv_2) + \cdots + a_m \phi(\xv_m)}_{\phiv_{\xv}} + \phiv_{\xv}^\perp = \phiv_{\xv} + \phiv_{\xv}^\perp
+\end{align*}
+其中$\phiv_{\xv}^\perp \in \ker (\Xv^\top)$。注意$\wv$在原问题中只以$\Xv^\top \wv$的形式出现，又
+\begin{align*}
+    \Xv^\top \wv = \Xv^\top (\phiv_{\xv} + \phiv_{\xv}^\perp) = \Xv^\top \phiv_{\xv}
+\end{align*}
+\blue{故原问题最优的$\wv$不是唯一的}，$\phiv_{\xv}^\perp$可以取$\ker (\Xv^\top)$中的任意向量。传统的核方法目标函数中还有$\wv$的二次正则，所以最小化
+\begin{align*}
+    \| \wv \|_2^2 = \| \phiv_{\xv} \|^2 + \| \phiv_{\xv}^\perp \|^2 \ge \| \phiv_{\xv} \|^2
+\end{align*}
+必然导致$\phiv_{\xv}^\perp = \zerov$，从而有
+\begin{align*}
+    \wv = a_1 \phi(\xv_1) + a_2 \phi(\xv_2) + \cdots + a_m \phi(\xv_m) = \Xv \av
+\end{align*}
+这就是所谓的表示定理。
 
-PDM目前的形式是无法直接核化的，因为目标函数中没有$\wv$的二次项，而间隔损失函数和$\wv$的二次项似乎不兼容(开头已述)。我目前想到是利用$\Kv \alphav = \zerov \Longleftrightarrow \Kv^\top\Kv \alphav = \zerov$这个结论，于是对偶问题中的等式约束可以改写为
+对于PDM，没有二次正则，我们就直接取$\phiv_{\xv}^\perp = \zerov$好了，即$\wv = \Xv \av$(注意$\tilde{\wv} = \wv + \ker (\Xv^\top)$其实都是原问题的最优解)，代入原问题有
 \begin{align*}
-    [\Xv \Yv, \Xv \Yv \ev]^\top [\Xv \Yv, \Xv \Yv \ev] \alphav = \zerov
+    \min_{\av, \epsilonv} ~ \frac{1}{2m} \epsilonv^\top \epsilonv, \quad \st ~ \epsilonv \ge \ev - \Yv \Xv^\top \Xv \av, ~ \ev^\top \Yv \Xv^\top \Xv \av = m
 \end{align*}
-这样就有了$\Xv^\top \Xv$这样的形式，且$\Xv$只以$\Xv^\top \Xv$的形式出现，因此可以引入核函数。求得$\betav$和$\mu$后，根据$\epsilonv = m \betav$可以得到$\epsilonv$，利用互补松弛条件
+记$\Kv = \Xv^\top \Xv$为核矩阵，$\vv = [\av; \epsilonv] \in \Rbb^{2m}$，写成QP的标准形式是
 \begin{align*}
-    \beta_i (\epsilon_i - 1 + y_i \wv^\top \phi(\xv_i)) = 0
+    \min_{\vv} ~ \frac{1}{2} \vv^\top \begin{bmatrix}
+        \zerov \\ & \frac{\Iv}{m}
+    \end{bmatrix} \vv, \quad \st ~ [- \Yv \Kv, -\Iv] \vv \le -\ev, ~ [\Kv \Yv \ev; \zerov]^\top \vv = m
 \end{align*}
-对于大于零的$\beta_i$，可以求得$\wv^\top \phi(\xv_i) = y_i - y_i \epsilon_i = y_i - y_i m \beta_i$，这些都是有损失的样本，即“支持向量”。设所有的支持向量为$\xv_1, \xv_2, \ldots, \xv_t$，假如表示定理成立，设
-\begin{align} \label{eq: span}
-    \wv = a_1 \phi(\xv_1) + a_2 \phi(\xv_2) + \cdots + a_t \phi(\xv_t)
-\end{align}
-两边依次左乘$\phi(\xv_1)^\top, \ldots, \phi(\xv_t)^\top$可以得到$t$个方程，求解线性方程组可以得到$a_1, \ldots, a_t$，最后预测
+解出$\vv$后，对于未知样本$\zv$，预测为
 \begin{align*}
-    \wv^\top \phi(\zv) = (a_1 \phi(\xv_1) + a_2 \phi(\xv_2) + \cdots + a_t \phi(\xv_t))^\top \phi(\zv)
+    \wv^\top \phi(\zv) & = (a_1 \phi(\xv_1) + a_2 \phi(\xv_2) + \cdots + a_m \phi(\xv_m))^\top \phi(\zv)     \\
+                       & = a_1 \kappa(\xv_1, \zv) + a_2 \kappa(\xv_2, \zv) + \cdots + a_m \kappa(\xv_m, \zv)
 \end{align*}
 
-所以最终问题就是表示定理是否成立，表示定理要求目标函数中的正则项$\Omega(\| \wv \|)$，其中$\Omega(\cdot)$是单调增函数，PDM没有正则项，可以理解为这里的$\Omega(\cdot)$恒为零函数，但零函数也是单调增函数，所以表示定理成立？
+\section{实验}
+
+如果是用matlab做实验，图省事可以直接调用quadprog函数，这是matlab优化工具箱自带的，但matlab的版本最好不要晚于2018，越新越好，最好是2020b，早期版本的matlab的优化工具箱很坑。如果没有新版本的matlab，可以用cvx工具箱(\url{http://cvxr.com/cvx/})，这是凸优化那本书的作者Stephen P. Boyd他们搞的，可以无缝嵌入到matlab代码里，很好用。
+
+如果是用python做实验，可以用cvxopt包(\url{https://cvxopt.org/userguide/coneprog.html#quadratic-programming})，或者cvxpy包(\url{https://www.cvxpy.org/examples/basic/quadratic_program.html})，后者是matlab下的cvx工具箱的python移植版。
 
 \end{document}
 
